@@ -17,17 +17,17 @@ package com.nanalysis.sharepoint;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 
 public class CommandLineClient {
-    private static void upload(SharepointClient sharepoint, String[] args) throws Exception {
-        if (args.length != 8) {
-            System.err.println("upload options are: <remote-parent> <new-folder-name> <local-path>");
-            System.exit(1);
+    private static void uploadFolder(SharepointClient sharepoint, String[] options) throws Exception {
+        if (options.length != 3) {
+            throw new IllegalArgumentException("upload-folder options are: <remote-parent> <new-folder-name> <local-path>");
         }
 
-        String localPath = args[5];
-        String remotePath = args[6];
-        String folderName = args[7];
+        String localPath = options[0];
+        String remotePath = options[1];
+        String folderName = options[2];
 
         File local = new File(localPath);
         if (!local.isDirectory()) {
@@ -49,25 +49,52 @@ public class CommandLineClient {
         }
     }
 
-    public static void main(String[] args) throws Exception {
+    private static void deleteFolder(SharepointClient sharepoint, String[] options) throws Exception {
+        if (options.length != 1) {
+            throw new IllegalArgumentException("delete-folder options are: <remote-path>");
+        }
+
+        sharepoint.deleteFolder(options[0]);
+    }
+
+    private static void executeAction(SharepointClient sharepoint, String action, String[] options) throws Exception {
+        switch (action) {
+            case "upload-folder":
+                uploadFolder(sharepoint, options);
+                break;
+            case "delete-folder":
+                deleteFolder(sharepoint, options);
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown action: " + action);
+        }
+    }
+
+    public static void main(String[] args) {
         if (args.length < 5) {
             System.err.println("usage: java -jar sharepoint-client.jar <url> <site> <login> <password> <action> [options], with possible actions being:");
-            System.err.println("- upload <local-path> <remote-parent> <new-folder-name>");
+            System.err.println("- upload-folder <local-path> <remote-path> <new-folder-name>");
+            System.err.println("- delete-folder <remote-path>");
             System.err.println();
-            System.err.println("example: java -jar sharepoint-client.jar https://xxx.sharepoint.com ProductDevelopment \"you@company.com\" \"password\" upload /tmp/folder \"Shared Documents/Software/Temporary\" \"NewFolder\"");
+            System.err.println("examples:");
+            System.err.println("> java -jar sharepoint-client.jar https://xxx.sharepoint.com ProductDevelopment you@company.com password upload-folder /tmp/folder \"Shared Documents/Software/Temporary\" \"NewFolder\"");
+            System.err.println("> java -jar sharepoint-client.jar https://xxx.sharepoint.com ProductDevelopment you@company.com password delete-folder \"Shared Documents/Software/Temporary/NewFolder\"");
             System.exit(1);
         }
 
-
-        SharepointClient sharepoint = new SharepointClient(args[0], args[1]);
-        sharepoint.authenticate(args[2], args[3]);
+        String baseUrl = args[0];
+        String site = args[1];
+        String login = args[2];
+        String password = args[3];
         String action = args[4];
+        String[] options = Arrays.copyOfRange(args, 5, args.length);
 
-        if (action.equals("upload")) {
-            upload(sharepoint, args);
-        } else {
-            System.err.println("Unknown action: " + action);
-            System.exit(1);
+        try {
+            SharepointClient sharepoint = new SharepointClient(baseUrl, site);
+            sharepoint.authenticate(login, password);
+            executeAction(sharepoint, action, options);
+        } catch (Exception e) {
+            System.err.println("Failure: " + e.getMessage());
         }
     }
 }
