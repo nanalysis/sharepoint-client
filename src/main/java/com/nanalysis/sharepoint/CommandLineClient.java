@@ -54,7 +54,9 @@ public class CommandLineClient {
             throw new IllegalArgumentException("delete-folder options are: <remote-path>");
         }
 
-        sharepoint.deleteFolder(options[0]);
+        String path = options[0];
+        System.out.println("Deleting folder: " + path);
+        sharepoint.deleteFolder(path);
     }
 
     private static void executeAction(SharepointClient sharepoint, String action, String[] options) throws Exception {
@@ -95,6 +97,7 @@ public class CommandLineClient {
             executeAction(sharepoint, action, options);
         } catch (Exception e) {
             System.err.println("Failure: " + e.getMessage());
+            System.exit(2);
         }
     }
 }
