@@ -37,7 +37,7 @@ Then declare the dependency:
     <dependency>
         <groupId>com.nanalysis</groupId>
         <artifactId>sharepoint-client</artifactId>
-        <version>1.0</version>
+        <version>1.1</version>
     </dependency>
 
 #### Code usage:
