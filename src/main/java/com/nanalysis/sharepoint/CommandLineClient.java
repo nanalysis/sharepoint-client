@@ -95,6 +95,7 @@ public class CommandLineClient {
             executeAction(sharepoint, action, options);
         } catch (Exception e) {
             System.err.println("Failure: " + e.getMessage());
+            System.exit(2);
         }
     }
 }
