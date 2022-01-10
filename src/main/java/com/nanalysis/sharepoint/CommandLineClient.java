@@ -73,27 +73,38 @@ public class CommandLineClient {
     }
 
     public static void main(String[] args) {
-        if (args.length < 5) {
-            System.err.println("usage: java -jar sharepoint-client.jar <url> <site> <login> <password> <action> [options], with possible actions being:");
+        if (args.length < 6) {
+            System.err.println("usage: java -jar sharepoint-client.jar <url> <site> <auth_method> <login|client_id> <password|client_secret> <action> [options].");
+            System.err.println("Authentication methods are: ");
+            System.err.println(" - user: uses login and password access");
+            System.err.println(" - api: uses OAuth2 with client id and client secret");
+            System.err.println("Possible actions are: ");
             System.err.println("- upload-folder <local-path> <remote-path> <new-folder-name>");
             System.err.println("- delete-folder <remote-path>");
             System.err.println();
             System.err.println("examples:");
-            System.err.println("> java -jar sharepoint-client.jar https://xxx.sharepoint.com ProductDevelopment you@company.com password upload-folder /tmp/folder \"Shared Documents/Software/Temporary\" \"NewFolder\"");
-            System.err.println("> java -jar sharepoint-client.jar https://xxx.sharepoint.com ProductDevelopment you@company.com password delete-folder \"Shared Documents/Software/Temporary/NewFolder\"");
+            System.err.println("> java -jar sharepoint-client.jar https://xxx.sharepoint.com ProductDevelopment user you@company.com password upload-folder /tmp/folder \"Shared Documents/Software/Temporary\" \"NewFolder\"");
+            System.err.println("> java -jar sharepoint-client.jar https://xxx.sharepoint.com ProductDevelopment api someid somesecret delete-folder \"Shared Documents/Software/Temporary/NewFolder\"");
             System.exit(1);
         }
 
         String baseUrl = args[0];
         String site = args[1];
-        String login = args[2];
-        String password = args[3];
-        String action = args[4];
-        String[] options = Arrays.copyOfRange(args, 5, args.length);
+        String authMethod = args[2];
+        String login = args[3];
+        String password = args[4];
+        String action = args[5];
+        String[] options = Arrays.copyOfRange(args, 6, args.length);
 
         try {
             SharepointClient sharepoint = new SharepointClient(baseUrl, site);
-            sharepoint.authenticate(login, password);
+            if(authMethod.equalsIgnoreCase("user")) {
+                sharepoint.authenticateWithUserCredentials(login, password);
+            } else if(authMethod.equalsIgnoreCase("api")) {
+                sharepoint.authenticateWithOAuth2(login, password);
+            } else {
+                throw new IllegalArgumentException("Unknown authentication method: " + authMethod);
+            }
             executeAction(sharepoint, action, options);
         } catch (Exception e) {
             System.err.println("Failure: " + e.getMessage());
