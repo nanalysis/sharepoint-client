@@ -16,18 +16,15 @@
 package com.nanalysis.sharepoint;
 
 
+import com.nanalysis.sharepoint.auth.OAuth2Authenticator;
+import com.nanalysis.sharepoint.auth.UserPasswordAuthenticator;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -58,49 +55,13 @@ public class SharepointClient {
         this.siteUrl = baseUrl + "/sites/" + site;
     }
 
-    public void authenticate(String username, String password)
+    public void authenticateWithUserCredentials(String username, String password)
             throws IOException, InterruptedException, XPathExpressionException, ParserConfigurationException, SAXException {
-        String token = getSecurityToken(username, password);
-        signin(token);
-        this.token = fetchBearerToken();
+        this.token = new UserPasswordAuthenticator(httpClient, baseUrl).authenticate(username, password);
     }
 
-    private String getSecurityToken(String username, String password) throws IOException, InterruptedException,
-            ParserConfigurationException, SAXException, XPathExpressionException {
-        String authentication = Templates.REQUEST_SECURITY_TOKEN
-                .replace("${username}", username)
-                .replace("${password}", password)
-                .replace("${endpoint}", baseUrl);
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://login.microsoftonline.com/extSTS.srf"))
-                .POST(HttpRequest.BodyPublishers.ofString(authentication))
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        return extractXmlTag(response.body(), "BinarySecurityToken");
-    }
-
-    private void signin(String securityToken) throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/_forms/default.aspx?wa=wsignin1.0"))
-                .POST(HttpRequest.BodyPublishers.ofString(securityToken))
-                .build();
-
-        // we don't care about the response here, only the side effect: cookies are stored in http client
-        httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-    }
-
-    private String fetchBearerToken() throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/_api/contextinfo"))
-                .header("Accept", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(" "))
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        JSONObject json = new JSONObject(response.body());
-        return json.getString("FormDigestValue");
+    public void authenticateWithOAuth2(String clientId, String clientSecret) throws IOException, InterruptedException {
+        this.token = new OAuth2Authenticator(httpClient, baseUrl, siteUrl).authenticate(clientId, clientSecret);
     }
 
     public List<String> listFolders(String path) throws IOException, InterruptedException {
@@ -230,18 +191,6 @@ public class SharepointClient {
                 throw new IOException("Unknown error: " + body);
             }
         }
-    }
-
-    private String extractXmlTag(String body, String tagName)
-            throws ParserConfigurationException, SAXException, IOException, XPathExpressionException {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        DocumentBuilder xmlDocumentBuilder = factory.newDocumentBuilder();
-        Element root = xmlDocumentBuilder.parse(new ByteArrayInputStream(body.getBytes())).getDocumentElement();
-
-        // Unable to ask for "//wsse:BinarySecurityToken" without defining a namespace context, use local-name workaround instead
-        return XPathFactory.newInstance().newXPath()
-                .evaluate("//*[local-name()='" + tagName + "']/text()", root);
     }
 
     private String encodePath(String path) {

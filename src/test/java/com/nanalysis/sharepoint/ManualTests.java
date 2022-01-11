@@ -25,18 +25,24 @@ import org.junit.Test;
  */
 public class ManualTests {
     private static final String BASE_URL = "https://xxx.sharepoint.com";
-    private static final String SITE = "ProductDevelopment";
-    private static final String TEST_PATH = "Shared Documents/Software/Temporary/SharepointApiTests";
-    private static final String USERNAME = "xxx@xxx.com";
-    private static final String PASSWORD = "xxx";
+    private static final String SITE = "EXT-Test";
+    private static final String TEST_PATH = "Shared Documents/General/Test";
+    private static final String USERNAME_OR_CLIENT_ID = "xxx";
+    private static final String PASSWORD_OR_CLIENT_SECRET = "xxx=";
+    private static final boolean USE_OAUTH2 = true;
 
     private SharepointClient client;
 
     @Before
     public void setup() throws Exception {
         client = new SharepointClient(BASE_URL, SITE);
-        client.authenticate(USERNAME, PASSWORD);
+        if(USE_OAUTH2) {
+            client.authenticateWithOAuth2(USERNAME_OR_CLIENT_ID, PASSWORD_OR_CLIENT_SECRET);
+        } else {
+            client.authenticateWithUserCredentials(USERNAME_OR_CLIENT_ID, PASSWORD_OR_CLIENT_SECRET);
+        }
     }
+
 
     @Ignore("Manual test")
     @Test
