@@ -16,10 +16,14 @@
 package com.nanalysis.sharepoint;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 
 public class CommandLineClient {
+    // use chucked upload if file is bigger than that
+    private static final int FILE_SIZE_THRESHOLD = 30 * 1024 * 1024; // 30MB
+
     private static void uploadFolder(SharepointClient sharepoint, String[] options) throws Exception {
         if (options.length != 3) {
             throw new IllegalArgumentException("upload-folder options are: <remote-parent> <new-folder-name> <local-path>");
@@ -45,7 +49,14 @@ public class CommandLineClient {
 
         for (File f : files) {
             System.out.println("Uploading: " + f.getName());
-            sharepoint.uploadFile(path, f.getName(), f);
+            if(f.length() < FILE_SIZE_THRESHOLD) {
+                sharepoint.uploadFile(path, f.getName(), f);
+            } else {
+                try(FileInputStream input = new FileInputStream(f)) {
+                    sharepoint.uploadBigFile(path, f.getName(), f.length(), input,
+                            percent -> System.out.printf("\r... %.2f%%%n", percent));
+                }
+            }
         }
     }
 

@@ -38,6 +38,8 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import java.util.function.Consumer;
 
 
 /**
@@ -153,6 +155,52 @@ public class SharepointClient {
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         checkForError(response);
+    }
+
+    public void uploadBigFile(String folder, String filename, long size, InputStream input, Consumer<Double> progressCallback)
+            throws IOException, InterruptedException {
+        // create small file first, it will be overwritten later
+        uploadFile(folder, filename, "PLACEHOLDER".getBytes());
+
+        String uid = UUID.randomUUID().toString();
+        byte[] buffer = new byte[10*1024*1024]; //10MB
+        int nread;
+        int offset = 0;
+
+        do {
+            nread = input.read(buffer);
+            if(nread == 0)
+                continue;
+
+            URI uri;
+
+            if(offset == 0) {
+                // first chunck, start upload
+                uri = URI.create(String.format("%s/_api/web/GetFolderByServerRelativeUrl('%s')/Files('%s')/StartUpload(uploadID='%s')",
+                        siteUrl, encodePath(folder), encodePath(filename), uid));
+            } else if(offset + nread < size) {
+                // next chunck, start upload
+                uri = URI.create(String.format("%s/_api/web/GetFolderByServerRelativeUrl('%s')/Files('%s')/ContinueUpload(uploadID='%s',fileOffset=%d)",
+                        siteUrl, encodePath(folder), encodePath(filename), uid, offset));
+            } else {
+                // last chunk, finish upload
+                uri = URI.create(String.format("%s/_api/web/GetFolderByServerRelativeUrl('%s')/Files('%s')/FinishUpload(uploadID='%s',fileOffset=%d)",
+                        siteUrl, encodePath(folder), encodePath(filename), uid, offset));
+            }
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(uri)
+                    .header("Authorization", "Bearer " + token)
+                    .header("Accept", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(buffer, 0, nread))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            checkForError(response);
+
+            offset += nread;
+            progressCallback.accept(100d * offset / size);
+        } while (offset < size);
     }
 
     public void deleteFile(String folder, String filename) throws IOException, InterruptedException {
