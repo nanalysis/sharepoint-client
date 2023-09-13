@@ -18,15 +18,26 @@ package com.nanalysis.sharepoint;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
+import java.util.List;
 
 public class CommandLineClient {
+    private static final String UPLOAD_FOLDER = "upload-folder";
+    private static final String DELETE_FOLDER = "delete-folder";
+    private static final String LIST_FOLDERS = "list-folders";
+    private static final String LIST_FILES = "list-files";
+    private static final String DOWNLOAD = "download";
+
     // use chucked upload if file is bigger than that
     private static final int FILE_SIZE_THRESHOLD = 30 * 1024 * 1024; // 30MB
 
     private static void uploadFolder(SharepointClient sharepoint, String[] options) throws Exception {
         if (options.length != 3) {
-            throw new IllegalArgumentException("upload-folder options are: <remote-parent> <new-folder-name> <local-path>");
+            throw new IllegalArgumentException(UPLOAD_FOLDER + " options are: <remote-parent> <new-folder-name> <local-path>");
         }
 
         String localPath = options[0];
@@ -62,7 +73,7 @@ public class CommandLineClient {
 
     private static void deleteFolder(SharepointClient sharepoint, String[] options) throws Exception {
         if (options.length != 1) {
-            throw new IllegalArgumentException("delete-folder options are: <remote-path>");
+            throw new IllegalArgumentException(DELETE_FOLDER + " options are: <remote-path>");
         }
 
         String path = options[0];
@@ -70,13 +81,55 @@ public class CommandLineClient {
         sharepoint.deleteFolder(path);
     }
 
+    private static void listFolders(SharepointClient sharepoint, String[] options) throws Exception {
+        if (options.length != 1) {
+            throw new IllegalArgumentException(LIST_FOLDERS + " options are: <remote-path>");
+        }
+
+        String path = options[0];
+        List<String> files = sharepoint.listFolders(path);
+        files.forEach(System.out::println);
+    }
+
+    private static void listFiles(SharepointClient sharepoint, String[] options) throws Exception {
+        if (options.length != 1) {
+            throw new IllegalArgumentException(LIST_FILES + " options are: <remote-path>");
+        }
+
+        String path = options[0];
+        List<String> files = sharepoint.listFiles(path);
+        files.forEach(System.out::println);
+    }
+
+    private static void download(SharepointClient sharepoint, String[] options) throws Exception {
+        if (options.length != 2) {
+            throw new IllegalArgumentException(LIST_FILES + " options are: <remote-parent> <file-name>");
+        }
+
+        String folder = options[0];
+        String fileName = options[1];
+        System.out.println("Downloading file: " + fileName);
+        try(InputStream input = sharepoint.download(folder, fileName)) {
+            Files.copy(input, Path.of(fileName), StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
     private static void executeAction(SharepointClient sharepoint, String action, String[] options) throws Exception {
         switch (action) {
-            case "upload-folder":
+            case UPLOAD_FOLDER:
                 uploadFolder(sharepoint, options);
                 break;
-            case "delete-folder":
+            case DELETE_FOLDER:
                 deleteFolder(sharepoint, options);
+                break;
+            case LIST_FOLDERS:
+                listFolders(sharepoint, options);
+                break;
+            case LIST_FILES:
+                listFiles(sharepoint, options);
+                break;
+            case DOWNLOAD:
+                download(sharepoint, options);
                 break;
             default:
                 throw new IllegalArgumentException("Unknown action: " + action);
@@ -90,12 +143,15 @@ public class CommandLineClient {
             System.err.println(" - user: uses login and password access");
             System.err.println(" - api: uses OAuth2 with client id and client secret");
             System.err.println("Possible actions are: ");
-            System.err.println("- upload-folder <local-path> <remote-path> <new-folder-name>");
-            System.err.println("- delete-folder <remote-path>");
+            System.err.println("- " + UPLOAD_FOLDER + " <local-path> <remote-path> <new-folder-name>");
+            System.err.println("- " + DELETE_FOLDER + " <remote-path>");
+            System.err.println("- " + LIST_FOLDERS + " <remote-path>");
+            System.err.println("- " + LIST_FILES + " <remote-path>");
+            System.err.println("- " + DOWNLOAD + " <remote-folder-path> <file-name>");
             System.err.println();
             System.err.println("examples:");
-            System.err.println("> java -jar sharepoint-client.jar https://xxx.sharepoint.com ProductDevelopment user you@company.com password upload-folder /tmp/folder \"Shared Documents/Software/Temporary\" \"NewFolder\"");
-            System.err.println("> java -jar sharepoint-client.jar https://xxx.sharepoint.com ProductDevelopment api someid somesecret delete-folder \"Shared Documents/Software/Temporary/NewFolder\"");
+            System.err.println("> java -jar sharepoint-client.jar https://xxx.sharepoint.com ProductDevelopment user you@company.com password " + UPLOAD_FOLDER + " /tmp/folder \"Shared Documents/Software/Temporary\" \"NewFolder\"");
+            System.err.println("> java -jar sharepoint-client.jar https://xxx.sharepoint.com ProductDevelopment api someid somesecret " + DELETE_FOLDER + " \"Shared Documents/Software/Temporary/NewFolder\"");
             System.exit(1);
         }
 

@@ -18,6 +18,9 @@ Possible authentication methods are:
 Possible actions are:
 - upload-folder <local-path> <remote-path> <new-folder-name>
 - delete-folder <remote-path>
+- list-folders <remote-path>
+- list-files <remote-path>
+- download <remote-folder-path> <file-name>
 
 Some examples:
 > java -jar sharepoint-client.jar https://xxx.sharepoint.com ProductDevelopment user you@company.com password upload-folder /tmp/folder "Shared Documents/Software" NewFolder
@@ -43,7 +46,7 @@ Then declare the dependency:
     <dependency>
         <groupId>com.nanalysis</groupId>
         <artifactId>sharepoint-client</artifactId>
-        <version>1.2</version>
+        <version>1.4</version>
     </dependency>
 
 #### Code usage:

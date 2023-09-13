@@ -224,6 +224,9 @@ public class SharepointClient {
                 .build();
 
         HttpResponse<InputStream> response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
+        if(response.statusCode() != 200) {
+            throw new IOException("Unable to download file: HTTP error " + response.statusCode());
+        }
         return response.body();
     }
 
