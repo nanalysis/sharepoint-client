@@ -25,13 +25,13 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Git checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
         with:
           # Check-out the submodules as well
           submodules: 'recursive'
 
       - name: Setup Java
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '11'
@@ -47,7 +47,7 @@ jobs:
         run: mvn org.jacoco:jacoco-maven-plugin:prepare-agent test -Dmaven.test.failure.ignore=true
 
       - name: Publish test report
-        uses: scacap/action-surefire-report@v1
+        uses: ScalableCapital/action-surefire-report@v2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           fail_on_test_failures: true
