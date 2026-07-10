@@ -93,11 +93,11 @@ public class GraphClient implements Client {
     /**
      * @param siteId Site ID to consider.
      * @param path   Path to consider.
-     * @return ID of file of folder.
+     * @return HTTP response that contains an ID, or possibly an error (e.g. 404 item not found).
      * @throws IOException          Communication issues.
      * @throws InterruptedException Interrupted while communication was ongoing.
      */
-    private String getResourceId(String siteId, String path) throws IOException, InterruptedException {
+    private HttpResponse<String> requestResourceId(String siteId, String path) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://graph.microsoft.com/v1.0/sites/" + siteId + "/drive/root:/" + encodePath(path)))
                 .header("Authorization", "Bearer " + token)
@@ -105,7 +105,18 @@ public class GraphClient implements Client {
                 .GET()
                 .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    /**
+     * @param siteId Site ID to consider.
+     * @param path   Path to consider.
+     * @return ID of file of folder.
+     * @throws IOException          Communication issues.
+     * @throws InterruptedException Interrupted while communication was ongoing.
+     */
+    private String getResourceId(String siteId, String path) throws IOException, InterruptedException {
+        HttpResponse<String> response = requestResourceId(siteId, path);
         checkForError(response);
         JSONObject json = new JSONObject(response.body());
         return json.getString("id");
@@ -178,7 +189,15 @@ public class GraphClient implements Client {
 
     private void deleteResource(String path) throws IOException, InterruptedException {
         String siteId = getSiteId();
-        String folderId = getResourceId(siteId, path);
+
+        HttpResponse<String> rscIdResponse = requestResourceId(siteId, path);
+        // Item not found, already deleted (or never existed).
+        if (rscIdResponse.statusCode() == 404) {
+            return;
+        }
+        checkForError(rscIdResponse);
+        String folderId = new JSONObject(rscIdResponse.body()).getString("id");
+
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://graph.microsoft.com/v1.0/sites/" + siteId + "/drive/items/" + folderId))
                 .header("Authorization", "Bearer " + token)
