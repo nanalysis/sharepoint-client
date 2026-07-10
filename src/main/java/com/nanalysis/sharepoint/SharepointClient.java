@@ -16,6 +16,8 @@
 package com.nanalysis.sharepoint;
 
 
+import com.nanalysis.sharepoint.auth.Authenticator;
+import com.nanalysis.sharepoint.auth.Msal4jAuthenticator;
 import com.nanalysis.sharepoint.auth.OAuth2Authenticator;
 import com.nanalysis.sharepoint.auth.UserPasswordAuthenticator;
 import org.json.JSONArray;
@@ -39,8 +41,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
-
 
 /**
  * A sharepoint client to manage authentication, files and folders. Use Sharepoint REST API.
@@ -68,6 +71,12 @@ public class SharepointClient implements Client {
     @Override
     public void authenticateWithOAuth2(String clientId, String clientSecret) throws IOException, InterruptedException {
         this.token = new OAuth2Authenticator(httpClient, baseUrl, site, API.SHAREPOINT).authenticate(clientId, clientSecret);
+    }
+
+    @Override
+    public void authenticateWithMsal4j(String clientId, String clientSecret) throws IOException, InterruptedException, ExecutionException, TimeoutException {
+        String tenantId = Authenticator.guessTenantId(httpClient, baseUrl + "/sites/" + site + "/_vti_bin/client.svc/");
+        this.token = new Msal4jAuthenticator(baseUrl, tenantId, API.SHAREPOINT).authenticate(clientId, clientSecret);
     }
 
     @Override

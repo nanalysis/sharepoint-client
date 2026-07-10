@@ -27,6 +27,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.function.Consumer;
 
+import static com.nanalysis.sharepoint.CommandLineClient.*;
+
 /**
  * Used to test the features from an IDE. Not meant to be called automatically.
  * Addresses and credentials must be set before use.
@@ -39,21 +41,24 @@ public class ManualTests {
     private static final String BIG_FILE_LOCAL_PATH = "xxx";
     private static final String USERNAME_OR_CLIENT_ID = "xxx";
     private static final String PASSWORD_OR_CLIENT_SECRET = "xxx";
-    private static final boolean USE_OAUTH2 = true;
     private static final API API_SELECTED = API.GRAPH;
+    private static final String AUTH = AUTH_MSAL4J;
 
     private Client client;
 
     @Before
     public void setup() throws Exception {
         client = API_SELECTED == API.GRAPH ? new GraphClient(BASE_URL, SITE) : new SharepointClient(BASE_URL, SITE);
-        if(USE_OAUTH2) {
+        if (AUTH.equalsIgnoreCase(AUTH_OAUTH2)) {
             client.authenticateWithOAuth2(USERNAME_OR_CLIENT_ID, PASSWORD_OR_CLIENT_SECRET);
-        } else {
+        } else if (AUTH.equalsIgnoreCase(AUTH_USER)) {
             client.authenticateWithUserCredentials(USERNAME_OR_CLIENT_ID, PASSWORD_OR_CLIENT_SECRET);
+        } else if (AUTH.equalsIgnoreCase(AUTH_MSAL4J)) {
+            client.authenticateWithMsal4j(USERNAME_OR_CLIENT_ID, PASSWORD_OR_CLIENT_SECRET);
+        } else {
+            throw new IllegalArgumentException(String.format("Unknown authentication method %s!", AUTH));
         }
     }
-
 
     @Ignore("Manual test")
     @Test
@@ -98,7 +103,6 @@ public class ManualTests {
         client.deleteFile(TEST_PATH, "test.txt");
         System.out.println("File deleted");
     }
-
 
     @Ignore("Manual test")
     @Test

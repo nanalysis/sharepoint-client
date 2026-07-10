@@ -26,8 +26,9 @@ import java.util.Arrays;
 import java.util.List;
 
 public class CommandLineClient {
-    private static final String AUTH_USER = "user";
-    private static final String AUTH_OAUTH2 = "api";
+    public static final String AUTH_USER = "user";
+    public static final String AUTH_OAUTH2 = "api";
+    public static final String AUTH_MSAL4J = "msal4j";
     private static final String API_GRAPH = "graph";
     private static final String API_SHAREPOINT = "sharepoint";
     private static final String UPLOAD_FOLDER = "upload-folder";
@@ -165,6 +166,8 @@ public class CommandLineClient {
                 client.authenticateWithUserCredentials(login, password);
             } else if (authMethod.equalsIgnoreCase(AUTH_OAUTH2)) {
                 client.authenticateWithOAuth2(login, password);
+            } else if (authMethod.equalsIgnoreCase(AUTH_MSAL4J)) {
+                client.authenticateWithMsal4j(login, password);
             } else {
                 throw new IllegalArgumentException("Unknown authentication method: " + authMethod);
             }
@@ -181,6 +184,7 @@ public class CommandLineClient {
             System.err.println("Authentication methods are: ");
             System.err.printf(" - %s: uses login and password access%n", AUTH_USER);
             System.err.printf(" - %s: uses OAuth2 with client id and client secret%n", AUTH_OAUTH2);
+            System.err.printf(" - %s: uses OAuth2 through MSAL4J with client id and client secret%n", AUTH_MSAL4J);
             System.err.println("Possible actions are: ");
             System.err.printf(" - %s <local-path> <remote-path> <new-folder-name>%n", UPLOAD_FOLDER);
             System.err.printf(" - %s <remote-path>%n", DELETE_FOLDER);

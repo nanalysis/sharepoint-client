@@ -19,6 +19,7 @@ Possible authentication methods are:
 
 - user: use user and password credentials (not supported for Graph API)
 - api: use OAuth2 with client id and secret
+- msal4j: use OAuth2 through MSAL4J with client id and secret
 
 Possible API are:
 
@@ -58,7 +59,7 @@ Then declare the dependency:
     <dependency>
         <groupId>com.nanalysis</groupId>
         <artifactId>sharepoint-client</artifactId>
-        <version>2.0</version>
+        <version>2.1</version>
     </dependency>
 
 #### Code usage:
@@ -81,6 +82,7 @@ This library is published under the GNU GPL v3, and an internal proprietary lice
 
 ## Changelog
 
+* 2.1: Add msal4j authentication method, also based on OAuth2.
 * 2.0: Update OAuth2 authentication following ACS removal, support Graph API which becomes command-line default, move to
   JDK17.
 * 1.4: Add list files/folders and download commands.

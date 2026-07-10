@@ -4,7 +4,7 @@
 
     <groupId>com.nanalysis</groupId>
     <artifactId>sharepoint-client</artifactId>
-    <version>2.0</version>
+    <version>2.1</version>
     <packaging>jar</packaging>
 
     <organization>
@@ -86,6 +86,13 @@
             <version>1.18.46</version>
             <scope>compile</scope>
             <optional>true</optional>
+        </dependency>
+
+        <!-- Authentication -->
+        <dependency>
+            <groupId>com.microsoft.azure</groupId>
+            <artifactId>msal4j</artifactId>
+            <version>1.23.1</version>
             <!-- license: MIT -->
         </dependency>
 

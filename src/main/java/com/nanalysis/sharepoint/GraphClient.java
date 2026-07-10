@@ -16,6 +16,8 @@
 package com.nanalysis.sharepoint;
 
 
+import com.nanalysis.sharepoint.auth.Authenticator;
+import com.nanalysis.sharepoint.auth.Msal4jAuthenticator;
 import com.nanalysis.sharepoint.auth.OAuth2Authenticator;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -33,6 +35,8 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 
@@ -72,6 +76,13 @@ public class GraphClient implements Client {
     @Override
     public void authenticateWithOAuth2(String clientId, String clientSecret) throws IOException, InterruptedException {
         this.token = new OAuth2Authenticator(httpClient, baseUrl, site, API.GRAPH).authenticate(clientId, clientSecret);
+    }
+
+    @Override
+    public void authenticateWithMsal4j(String clientId, String clientSecret) throws IOException, InterruptedException, ExecutionException, TimeoutException {
+        // First guess tenant ID, this could be better shared with OAuth2Authenticator.
+        String tenantId = Authenticator.guessTenantId(httpClient, baseUrl + "/sites/" + site + "/_vti_bin/client.svc/");
+        this.token = new Msal4jAuthenticator(baseUrl, tenantId, API.GRAPH).authenticate(clientId, clientSecret);
     }
 
     private String getSiteId() throws IOException, InterruptedException {

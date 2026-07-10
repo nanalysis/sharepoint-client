@@ -8,6 +8,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 public interface Client {
@@ -16,6 +18,8 @@ public interface Client {
             throws IOException, InterruptedException, XPathExpressionException, ParserConfigurationException, SAXException;
 
     void authenticateWithOAuth2(String clientId, String clientSecret) throws IOException, InterruptedException;
+
+    void authenticateWithMsal4j(String clientId, String clientSecret) throws IOException, InterruptedException, ExecutionException, TimeoutException;
 
     List<String> listFolders(String path) throws IOException, InterruptedException;
 

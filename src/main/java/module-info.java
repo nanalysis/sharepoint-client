@@ -17,6 +17,7 @@ module com.nananlysis.jcamp {
     requires org.json;
     requires java.xml;
     requires java.net.http;
+    requires com.microsoft.aad.msal4j;
     requires static lombok;
     exports com.nanalysis.sharepoint;
 }
