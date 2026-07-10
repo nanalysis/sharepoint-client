@@ -52,6 +52,7 @@ public class GraphClient implements Client {
     private final String baseUrl;
 
     private String token = "";
+    private String siteId = null;
 
     public GraphClient(String baseUrl, String site) {
         this.baseUrl = baseUrl;
@@ -74,16 +75,19 @@ public class GraphClient implements Client {
     }
 
     private String getSiteId() throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://graph.microsoft.com/v1.0/sites/" + host + ":/sites/" + site))
-                .header("Authorization", "Bearer " + token)
-                .GET()
-                .build();
+        if (siteId == null) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://graph.microsoft.com/v1.0/sites/" + host + ":/sites/" + site))
+                    .header("Authorization", "Bearer " + token)
+                    .GET()
+                    .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        checkForError(response);
-        JSONObject json = new JSONObject(response.body());
-        return json.getString("id");
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            checkForError(response);
+            JSONObject json = new JSONObject(response.body());
+            siteId = json.getString("id");
+        }
+        return siteId;
     }
 
     /**
