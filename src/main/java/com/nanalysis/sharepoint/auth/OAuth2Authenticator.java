@@ -55,9 +55,8 @@ public class OAuth2Authenticator {
     public String authenticate(String clientId, String clientSecret)
             throws IOException, InterruptedException {
         guessTenantIfNeeded();
-        String clientAtTenant = clientId + "@" + tenantId;
         String body = "grant_type=client_credentials"
-                + "&client_id=" + URLEncoder.encode(clientAtTenant, StandardCharsets.UTF_8)
+                + "&client_id=" + URLEncoder.encode(clientId, StandardCharsets.UTF_8)
                 + "&client_secret=" + URLEncoder.encode(clientSecret, StandardCharsets.UTF_8)
                 + "&scope=" + URLEncoder.encode(getScope(), StandardCharsets.UTF_8);
 
