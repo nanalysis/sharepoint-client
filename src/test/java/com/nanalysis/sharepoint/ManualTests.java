@@ -40,13 +40,13 @@ public class ManualTests {
     private static final String USERNAME_OR_CLIENT_ID = "xxx";
     private static final String PASSWORD_OR_CLIENT_SECRET = "xxx";
     private static final boolean USE_OAUTH2 = true;
-    private static final API API_SELECTED = API.Graph;
+    private static final API API_SELECTED = API.GRAPH;
 
     private Client client;
 
     @Before
     public void setup() throws Exception {
-        client = API_SELECTED == API.Graph ? new GraphClient(BASE_URL, SITE) : new SharepointClient(BASE_URL, SITE);
+        client = API_SELECTED == API.GRAPH ? new GraphClient(BASE_URL, SITE) : new SharepointClient(BASE_URL, SITE);
         if(USE_OAUTH2) {
             client.authenticateWithOAuth2(USERNAME_OR_CLIENT_ID, PASSWORD_OR_CLIENT_SECRET);
         } else {

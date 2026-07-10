@@ -67,7 +67,7 @@ public class SharepointClient implements Client {
 
     @Override
     public void authenticateWithOAuth2(String clientId, String clientSecret) throws IOException, InterruptedException {
-        this.token = new OAuth2Authenticator(httpClient, baseUrl, site, API.Sharepoint).authenticate(clientId, clientSecret);
+        this.token = new OAuth2Authenticator(httpClient, baseUrl, site, API.SHAREPOINT).authenticate(clientId, clientSecret);
     }
 
     @Override

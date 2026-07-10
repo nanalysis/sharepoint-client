@@ -160,7 +160,7 @@ public class CommandLineClient {
      */
     private static void command(String baseUrl, String site, String authMethod, String login, String password, API api, String action, String[] options) {
         try {
-            Client client = api == API.Sharepoint ? new SharepointClient(baseUrl, site) : new GraphClient(baseUrl, site);
+            Client client = api == API.SHAREPOINT ? new SharepointClient(baseUrl, site) : new GraphClient(baseUrl, site);
             if (authMethod.equalsIgnoreCase(AUTH_USER)) {
                 client.authenticateWithUserCredentials(login, password);
             } else if (authMethod.equalsIgnoreCase(AUTH_OAUTH2)) {
@@ -205,11 +205,11 @@ public class CommandLineClient {
         String password = args[4];
         // If 5th argument is used for API, then action is on 6th and options after that. If not, 5th argument is action.
         if (API_SHAREPOINT.equalsIgnoreCase(args[5])) {
-            command(baseUrl, site, authMethod, login, password, API.Sharepoint, args[6], Arrays.copyOfRange(args, 7, args.length));
+            command(baseUrl, site, authMethod, login, password, API.SHAREPOINT, args[6], Arrays.copyOfRange(args, 7, args.length));
         } else if (API_GRAPH.equalsIgnoreCase(args[5])) {
-            command(baseUrl, site, authMethod, login, password, API.Graph, args[6], Arrays.copyOfRange(args, 7, args.length));
+            command(baseUrl, site, authMethod, login, password, API.GRAPH, args[6], Arrays.copyOfRange(args, 7, args.length));
         } else {
-            command(baseUrl, site, authMethod, login, password, API.Graph, args[5], Arrays.copyOfRange(args, 6, args.length));
+            command(baseUrl, site, authMethod, login, password, API.GRAPH, args[5], Arrays.copyOfRange(args, 6, args.length));
         }
     }
 }

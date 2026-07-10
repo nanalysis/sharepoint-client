@@ -33,8 +33,8 @@ public class OAuth2Authenticator {
 
     private String getScope() {
         return switch (api) {
-            case Graph -> "https://graph.microsoft.com/.default";
-            case Sharepoint -> baseUrl + "/.default";
+            case GRAPH -> "https://graph.microsoft.com/.default";
+            case SHAREPOINT -> baseUrl + "/.default";
         };
     }
 

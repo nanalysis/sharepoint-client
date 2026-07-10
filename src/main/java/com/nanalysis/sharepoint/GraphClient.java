@@ -70,7 +70,7 @@ public class GraphClient implements Client {
 
     @Override
     public void authenticateWithOAuth2(String clientId, String clientSecret) throws IOException, InterruptedException {
-        this.token = new OAuth2Authenticator(httpClient, baseUrl, site, API.Graph).authenticate(clientId, clientSecret);
+        this.token = new OAuth2Authenticator(httpClient, baseUrl, site, API.GRAPH).authenticate(clientId, clientSecret);
     }
 
     private String getSiteId() throws IOException, InterruptedException {
