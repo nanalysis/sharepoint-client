@@ -1,10 +1,10 @@
 package com.nanalysis.sharepoint.auth;
 
+import com.nanalysis.sharepoint.API;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -12,32 +12,53 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 
 public class OAuth2Authenticator {
-    private static final String OAUTH_URL_TEMPLATE = "https://accounts.accesscontrol.windows.net/${tenantId}/tokens/OAuth/2";
+    private static final String OAUTH_URL_TEMPLATE = "https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token";
 
     private final HttpClient httpClient;
     private final String baseUrl;
     private final String clientUrl;
+    private final API api;
 
-    public OAuth2Authenticator(HttpClient httpClient, String baseUrl, String siteUrl) {
+    /**
+     * Tenant Id used for authentication, will be guessed.
+     */
+    private String tenantId;
+
+    public OAuth2Authenticator(HttpClient httpClient, String baseUrl, String site, API api) {
         this.httpClient = httpClient;
         this.baseUrl = baseUrl;
-        this.clientUrl = siteUrl + "/_vti_bin/client.svc/";
+        this.clientUrl = baseUrl + "/sites/" + site + "/_vti_bin/client.svc/";
+        this.api = api;
+    }
+
+    private String getScope() {
+        return switch (api) {
+            case GRAPH -> "https://graph.microsoft.com/.default";
+            case SHAREPOINT -> baseUrl + "/.default";
+        };
+    }
+
+    /**
+     * Try to find tenant id from authentication header if not already set.
+     *
+     * @throws IOException          Communication issues.
+     * @throws InterruptedException Interrupted while communication was ongoing.
+     */
+    private void guessTenantIfNeeded() throws IOException, InterruptedException {
+        boolean guessTenant = tenantId == null || tenantId.isEmpty();
+        if (guessTenant) {
+            String header = getAuthenticationHeader();
+            tenantId = extractAuthHeaderAttribute(header, "realm");
+        }
     }
 
     public String authenticate(String clientId, String clientSecret)
             throws IOException, InterruptedException {
-        String host = new URL(baseUrl).getHost();
-
-        String header = getAuthenticationHeader();
-        String tenantId = extractAuthHeaderAttribute(header, "realm");
-        String resourceId = extractAuthHeaderAttribute(header, "client_id");
-
-        String clientAtTenant = clientId + "@" + tenantId;
-        String resource = resourceId + "/" + host+ "@" + tenantId;
+        guessTenantIfNeeded();
         String body = "grant_type=client_credentials"
-                + "&client_id=" + URLEncoder.encode(clientAtTenant, StandardCharsets.UTF_8)
+                + "&client_id=" + URLEncoder.encode(clientId, StandardCharsets.UTF_8)
                 + "&client_secret=" + URLEncoder.encode(clientSecret, StandardCharsets.UTF_8)
-                + "&resource=" + URLEncoder.encode(resource, StandardCharsets.UTF_8);
+                + "&scope=" + URLEncoder.encode(getScope(), StandardCharsets.UTF_8);
 
         String oauthUrl = OAUTH_URL_TEMPLATE.replace("${tenantId}", tenantId);
         HttpRequest request = HttpRequest.newBuilder()

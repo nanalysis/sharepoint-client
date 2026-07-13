@@ -21,6 +21,10 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.function.Consumer;
 
 /**
@@ -30,17 +34,19 @@ import java.util.function.Consumer;
 public class ManualTests {
     private static final String BASE_URL = "https://xxx.sharepoint.com";
     private static final String SITE = "EXT-Test";
-    private static final String TEST_PATH = "Shared Documents/General/Test";
+    private static final String TEST_PATH = "General/Test";
+    private static final String TEST_FILE = "test.txt";
     private static final String BIG_FILE_LOCAL_PATH = "xxx";
     private static final String USERNAME_OR_CLIENT_ID = "xxx";
     private static final String PASSWORD_OR_CLIENT_SECRET = "xxx";
     private static final boolean USE_OAUTH2 = true;
+    private static final API API_SELECTED = API.GRAPH;
 
-    private SharepointClient client;
+    private Client client;
 
     @Before
     public void setup() throws Exception {
-        client = new SharepointClient(BASE_URL, SITE);
+        client = API_SELECTED == API.GRAPH ? new GraphClient(BASE_URL, SITE) : new SharepointClient(BASE_URL, SITE);
         if(USE_OAUTH2) {
             client.authenticateWithOAuth2(USERNAME_OR_CLIENT_ID, PASSWORD_OR_CLIENT_SECRET);
         } else {
@@ -99,5 +105,14 @@ public class ManualTests {
     public void deleteFolder() throws Exception {
         client.deleteFolder(TEST_PATH + "/NewFolder");
         System.out.println("Folder deleted");
+    }
+
+    @Ignore("Manual test")
+    @Test
+    public void downloadFile() throws Exception {
+        try (InputStream input = client.download(TEST_PATH, TEST_FILE)) {
+            Files.copy(input, Path.of(TEST_FILE), StandardCopyOption.REPLACE_EXISTING);
+        }
+        System.out.println("File downloaded");
     }
 }

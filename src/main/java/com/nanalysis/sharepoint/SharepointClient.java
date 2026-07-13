@@ -43,29 +43,34 @@ import java.util.function.Consumer;
 
 
 /**
- * A sharepoint client to manage authentication, files and folders.
+ * A sharepoint client to manage authentication, files and folders. Use Sharepoint REST API.
  */
-public class SharepointClient {
+public class SharepointClient implements Client {
     private final HttpClient httpClient = HttpClient.newBuilder().cookieHandler(new CookieManager(null, CookiePolicy.ACCEPT_ALL)).build();
     private final String baseUrl;
+    private final String site;
     private final String siteUrl;
 
     private String token = "";
 
     public SharepointClient(String baseUrl, String site) {
         this.baseUrl = baseUrl;
+        this.site = site;
         this.siteUrl = baseUrl + "/sites/" + site;
     }
 
+    @Override
     public void authenticateWithUserCredentials(String username, String password)
             throws IOException, InterruptedException, XPathExpressionException, ParserConfigurationException, SAXException {
         this.token = new UserPasswordAuthenticator(httpClient, baseUrl).authenticate(username, password);
     }
 
+    @Override
     public void authenticateWithOAuth2(String clientId, String clientSecret) throws IOException, InterruptedException {
-        this.token = new OAuth2Authenticator(httpClient, baseUrl, siteUrl).authenticate(clientId, clientSecret);
+        this.token = new OAuth2Authenticator(httpClient, baseUrl, site, API.SHAREPOINT).authenticate(clientId, clientSecret);
     }
 
+    @Override
     public List<String> listFolders(String path) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(siteUrl + "/_api/web/GetFolderByServerRelativeUrl('" + encodePath(path) + "')/Folders"))
@@ -84,6 +89,7 @@ public class SharepointClient {
         return folders;
     }
 
+    @Override
     public List<String> listFiles(String path) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(siteUrl + "/_api/web/GetFolderByServerRelativeUrl('" + encodePath(path) + "')/Files"))
@@ -95,14 +101,14 @@ public class SharepointClient {
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         JSONObject json = new JSONObject(response.body());
         JSONArray results = json.getJSONArray("value");
-        List<String> folders = new ArrayList<>(results.length());
+        List<String> files = new ArrayList<>(results.length());
         for (int i = 0; i < results.length(); i++) {
-            folders.add(results.getJSONObject(i).getString("Name"));
+            files.add(results.getJSONObject(i).getString("Name"));
         }
-        return folders;
+        return files;
     }
 
-
+    @Override
     public void createFolder(String parent, String folderName) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(String.format("%s/_api/web/folders", siteUrl)))
@@ -117,6 +123,7 @@ public class SharepointClient {
         checkForError(response);
     }
 
+    @Override
     public void deleteFolder(String path) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(siteUrl + "/_api/web/GetFolderByServerRelativeUrl('" + encodePath(path) + "')"))
@@ -130,7 +137,7 @@ public class SharepointClient {
         checkForError(response);
     }
 
-
+    @Override
     public void uploadFile(String folder, String filename, File file) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(String.format("%s/_api/web/GetFolderByServerRelativeUrl('%s')/Files/Add(url='%s',overwrite=true)",
@@ -144,6 +151,7 @@ public class SharepointClient {
         checkForError(response);
     }
 
+    @Override
     public void uploadFile(String folder, String filename, byte[] data) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(String.format("%s/_api/web/GetFolderByServerRelativeUrl('%s')/Files/Add(url='%s',overwrite=true)",
@@ -157,6 +165,7 @@ public class SharepointClient {
         checkForError(response);
     }
 
+    @Override
     public void uploadBigFile(String folder, String filename, long size, InputStream input, Consumer<Double> progressCallback)
             throws IOException, InterruptedException {
         // create small file first, it will be overwritten later
@@ -203,6 +212,7 @@ public class SharepointClient {
         } while (offset < size);
     }
 
+    @Override
     public void deleteFile(String folder, String filename) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(siteUrl + "/_api/web/GetFolderByServerRelativeUrl('" + encodePath(folder) + "')/Files('" + encodePath(filename) + "')"))
@@ -216,6 +226,7 @@ public class SharepointClient {
         checkForError(response);
     }
 
+    @Override
     public InputStream download(String folder, String filename) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(siteUrl + "/_api/web/GetFolderByServerRelativeUrl('" + encodePath(folder) + "')/Files('" + encodePath(filename) + "')/$value"))
